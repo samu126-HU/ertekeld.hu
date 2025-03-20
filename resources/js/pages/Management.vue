@@ -4,6 +4,13 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import Heading from '@/components/Heading.vue';
 import Button from '@/components/ui/button/Button.vue';
 
+const breadcrumbs: BreadcrumbItem[] = [
+    {
+        title: 'Jogosultságok kezelése',
+        href: '/management',
+    },
+];
+
 const handleAdminClick = () => {
     window.location.href = route('management.admins');
 };
@@ -11,6 +18,8 @@ const handleAdminClick = () => {
 const handleRaterClick = () => {
     window.location.href = route('management.users');
 };
+
+
 </script>
 
 <template>

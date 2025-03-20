@@ -35,7 +35,7 @@ const submitRating = (websiteId, rating) => {
 
     <Head title="Weboldal értékelés" />
 
-    <AppLayout>
+    <AppLayout :breadcrumbs="breadcrumbs">
 
         <h1 class="text-2xl font-bold text-center pt-5">Weboldalak értékelése</h1>
         <!-- @vue-skip Annoying errors skip it  -->
