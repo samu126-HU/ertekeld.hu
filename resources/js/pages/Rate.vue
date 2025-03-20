@@ -65,7 +65,7 @@ const submitRating = (websiteId, rating) => {
                                         ]">
                                         {{ rating }}
                                     </button>
-                                    <p v-if="!canRate">Orbán Viktor elvette a szavazati jogod!</p>
+                                    <p v-if="!canRate">Nincs lehetőséged jelenleg szavazni!</p>
                                 </div>
                             </div>
                         </div>
