@@ -26,7 +26,7 @@ const handleRaterClick = () => {
 
     <Head title="Jogkezelés"></Head>
 
-    <AppLayout>
+    <AppLayout :breadcrumbs="breadcrumbs">
         <div class="p-5 text-center">
             <Heading title="Jogosultságkezelés"
                 description="Válasszon az alábbi jogosultságkezelési lehetőségek közül:"></Heading>

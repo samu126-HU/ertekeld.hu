@@ -13,7 +13,7 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-const props = defineProps({
+defineProps({
     websites: Array,
     userRatings: Object,
     canRate: Boolean,
