@@ -2,7 +2,9 @@
 
 use App\Http\Controllers\PermissionsController;
 use App\Http\Controllers\RaterController;
+use App\Http\Controllers\WebsiteManager;
 use App\Http\Middleware\IsAdmin;
+use App\Http\Middleware\IsMod;
 use App\Models\Raters;
 use App\Models\Rating;
 use App\Models\Website;
@@ -16,9 +18,9 @@ Route::get('/', function () {
 })->name('home');
 
 Route::get('dashboard', function () {
-    $totalWebsites = (int)Website::count();
-    $totalRatings = (int)Rating::count();
-    $averageRating = (float)Rating::avg('rating') ?? 0.0;
+    $totalWebsites = (int) Website::count();
+    $totalRatings = (int) Rating::count();
+    $averageRating = (float) Rating::avg('rating') ?? 0.0;
     $latestReviews = Rating::with(['user:id,name', 'website:id,name,url'])
         ->orderBy('updated_at', 'desc')
         ->latest()
@@ -52,12 +54,25 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/users/{user}/toggle-rating', [RaterController::class, 'toggleRating'])
             ->name('users.toggle-rating');
 
-        //Admin management
-        Route::get('/management/admins', [AdminController::class, 'index'])
-            ->name('management.admins');
-        Route::post('/users/{user}/toggle-admin', [AdminController::class, 'toggleAdmin'])
-            ->name('users.toggle-admin');
+        //Admin level management
 
+        Route::get('/management/admin-levels', [AdminController::class, 'index'])
+            ->name('management.admin-levels');
+        // Route::get('/management/admin-levels', [AdminController::class, 'adminLevels'])
+        //     ->name('management.admin-levels');
+        Route::post('/users/{user}/update-admin-level', [AdminController::class, 'updateAdminLevel'])
+            ->name('users.update-admin-level');
+    });
+    //Access if logged in & mod
+    Route::middleware(IsMod::class)->group(function () {
+
+        //Website management
+        Route::get('/management/websites', [WebsiteManager::class, 'index'])
+            ->name('management.websites');
+        Route::post('/management/websites/add', [WebsiteManager::class, 'store'])
+            ->name('management.websites.add');
+        Route::delete('/management/websites/delete/{website}', [WebsiteManager::class, 'destroy'])
+            ->name('management.websites.delete');
     });
 
 });

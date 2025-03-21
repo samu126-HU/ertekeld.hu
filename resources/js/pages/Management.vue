@@ -3,6 +3,7 @@ import { Head, Link } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
 import Heading from '@/components/Heading.vue';
 import Button from '@/components/ui/button/Button.vue';
+import { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -12,7 +13,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 const handleAdminClick = () => {
-    window.location.href = route('management.admins');
+    window.location.href = route('management.admin-levels');
 };
 
 const handleRaterClick = () => {

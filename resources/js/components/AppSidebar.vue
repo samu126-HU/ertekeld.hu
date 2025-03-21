@@ -38,6 +38,11 @@ const footerNavItems: NavItem[] = [
         href: '/management',
         icon: BookOpen,
     },
+    {
+        title: 'Weboldalkezelő',
+        href: '/management/websites',
+        icon: BookOpen,
+    },
 ];
 </script>
 

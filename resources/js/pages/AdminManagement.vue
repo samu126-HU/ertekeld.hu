@@ -5,19 +5,70 @@ import debounce from 'lodash/debounce';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import Button from '@/components/ui/button/Button.vue';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-const props = defineProps({
-    links: Object,
-    users: Object,
-    filters: {
-        type: Object,
-        default: () => ({ search: '' })
-    }
+interface Admin {
+    adminLevel: number;
+}
+
+interface User {
+    id: number;
+    name: string;
+    email: string;
+    admin?: Admin;
+}
+
+// Fix the type for ADMIN_LEVELS
+const ADMIN_LEVELS = {
+    NORMAL_USER: 0,
+    MODERATOR: 1,
+    ADMIN: 2,  
+} as const;
+
+type AdminLevel = typeof ADMIN_LEVELS[keyof typeof ADMIN_LEVELS];
+
+const ADMIN_LEVEL_LABELS: Record<AdminLevel, string> = {
+    [ADMIN_LEVELS.NORMAL_USER]: 'Felhasználó',
+    [ADMIN_LEVELS.MODERATOR]: 'Moderátor', 
+    [ADMIN_LEVELS.ADMIN]: 'Admin',
+};
+
+// Make props optional with default values
+const props = withDefaults(defineProps<{
+    links?: any;
+    users?: {
+        data: User[];
+        from: number;
+        to: number;
+        total: number;
+        links: any[];
+    };
+    filters?: {
+        search: string;
+    };
+}>(), {
+    links: () => ({}),
+    users: () => ({
+        data: [],
+        from: 0,
+        to: 0,
+        total: 0,
+        links: []
+    }),
+    filters: () => ({
+        search: ''
+    })
 });
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Jogkezelő',
+        title: 'Jogkezelő',  
         href: '/management',
     },
     {
@@ -26,17 +77,60 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-const search = ref(props.filters.search);
+const search = ref(props.filters?.search ?? '');
 
+// Fix the search watch handler
 watch(search, debounce((value) => {
-    router.get('/management/admins', { search: value }, {
+    router.get(route('management.admin-levels'), { 
+        search: value 
+    }, {
         preserveState: true,
-        preserveScroll: true
+        preserveScroll: true,
+        replace: true,
+        only: ['users', 'filters']
     });
 }, 300));
 
-const toggleUserAdmin = (userId: number) => {
-    router.post(`/users/${userId}/toggle-admin`);
+// Fix the selectedLevels type
+const selectedLevels = ref<Record<number, string>>({});
+
+// Fix the type error in updateAdminLevel
+const updateAdminLevel = (userId: number, level: string) => {
+    const numLevel = parseInt(level) as AdminLevel;
+    if (!(numLevel in ADMIN_LEVEL_LABELS)) return;
+
+    selectedLevels.value[userId] = level;
+    router.post(`/users/${userId}/update-admin-level`, 
+        { level: numLevel }, 
+        {
+            preserveScroll: true,
+            onError: (errors) => {
+                console.error('Failed to update admin level:', errors);
+                const currentUser = props.users?.data.find(u => u.id === userId);
+                selectedLevels.value[userId] = String(currentUser?.admin?.adminLevel ?? 0);
+            }
+        }
+    );
+};
+
+// Initialize selected levels when users data changes
+watch(() => props.users?.data, (newUsers) => {
+    if (newUsers) {
+        newUsers.forEach(user => {
+            selectedLevels.value[user.id] = String(user.admin?.adminLevel ?? '0');
+        });
+    }
+}, { immediate: true });
+
+const getAdminLevelClass = (level: number) => {
+    switch (level) {
+        case ADMIN_LEVELS.ADMIN:
+            return 'text-red-600';
+        case ADMIN_LEVELS.MODERATOR:
+            return 'text-blue-600';
+        default:
+            return 'text-gray-600';
+    }
 };
 
 const goToPage = (url: string) => {
@@ -48,12 +142,14 @@ const goToPage = (url: string) => {
     }
 };
 
-console.log(props.users);
-
+// Fix the template type error with proper type casting
+const getSelectPlaceholder = (userId: number): string => {
+    const level = Number(selectedLevels.value[userId]) as AdminLevel;
+    return ADMIN_LEVEL_LABELS[level] || ADMIN_LEVEL_LABELS[0];
+};
 </script>
 
 <template>
-
     <Head title="Jogkezelő"></Head>
 
     <AppLayout :breadcrumbs="breadcrumbs">
@@ -71,7 +167,7 @@ console.log(props.users);
                                 <tr>
                                     <th class="px-6 py-3 text-left">Név</th>
                                     <th class="px-6 py-3 text-left">Email</th>
-                                    <th class="px-6 py-3 text-left">Admin</th>
+                                    <th class="px-6 py-3 text-left">Jogosultság</th>
                                     <th class="px-6 py-3 text-left">Műveletek</th>
                                 </tr>
                             </thead>
@@ -80,14 +176,28 @@ console.log(props.users);
                                     <td class="px-6 py-4">{{ user.name }}</td>
                                     <td class="px-6 py-4">{{ user.email }}</td>
                                     <td class="px-6 py-4">
-                                        <span :class="(user.admin?.isAdmin ?? false) ? 'text-green-600' : 'text-red-600'">
-                                            {{ (user.admin?.isAdmin ?? false) ? 'Igen' : 'Nem' }}
+                                        <span :class="getAdminLevelClass(user.admin?.adminLevel ?? 0)">
+                                            {{ ADMIN_LEVEL_LABELS[user.admin?.adminLevel as keyof typeof ADMIN_LEVEL_LABELS ?? 0] }}
                                         </span>
                                     </td>
                                     <td class="px-6 py-4">
-                                        <Button @click="toggleUserAdmin(user.id)">
-                                            Megváltoztatás
-                                        </Button>
+                                        <Select
+                                            :model-value="selectedLevels[user.id]"
+                                            @update:model-value="(level) => level !== null && updateAdminLevel(user.id, String(level))"
+                                        >
+                                            <SelectTrigger class="w-[180px]">
+                                                <SelectValue :placeholder="getSelectPlaceholder(user.id)" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem
+                                                    v-for="(label, level) in ADMIN_LEVEL_LABELS"
+                                                    :key="level"
+                                                    :value="String(level)"
+                                                >
+                                                    {{ label }}
+                                                </SelectItem>
+                                            </SelectContent>
+                                        </Select>
                                     </td>
                                 </tr>
                             </tbody>
@@ -111,7 +221,6 @@ console.log(props.users);
                             </Button>
                         </nav>
                     </div>
-
                 </div>
             </div>
         </div>

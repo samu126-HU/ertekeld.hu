@@ -5,11 +5,18 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use App\Models\Admins;
-use Log;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 
-class IsAdmin
+class IsMod
 {
+    /**
+     * Handle an incoming request.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \Closure  $next
+     * @return \Symfony\Component\HttpFoundation\Response
+     */
     public function handle(Request $request, Closure $next): Response
     {
         if (!auth()->check()) {
@@ -19,7 +26,7 @@ class IsAdmin
         $adminLevel = auth()->user()->isAdmin();
         Log::info('User admin level: ' . $adminLevel);
 
-        if ($adminLevel >= Admins::ADMIN) {
+        if ($adminLevel >= Admins::MODERATOR) {
             return $next($request);
         }
 

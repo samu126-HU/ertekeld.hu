@@ -67,12 +67,22 @@ class User extends Authenticatable
 
     public function admin() {
         return $this->hasOne(Admins::class)->withDefault([
-            'isAdmin' => false,
+            'adminLevel' => Admins::NORMAL_USER,
         ]);
     }
 
     public function isAdmin()
     {
-        return $this->admin?->isAdmin ?? false;
+        return $this->admin?->adminLevel ?? Admins::NORMAL_USER;
+    }
+
+    public function isModerator()
+    {
+        return $this->isAdmin() >= Admins::MODERATOR;
+    }
+
+    public function isFullAdmin()
+    {
+        return $this->isAdmin() >= Admins::ADMIN;
     }
 }
