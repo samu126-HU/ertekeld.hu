@@ -5,7 +5,7 @@ import Heading from '@/components/Heading.vue';
 
 <template>
 
-    <Head title="Welcome">
+    <Head title="Üdvözöljük">
         <link rel="preconnect" href="https://rsms.me/" />
         <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
     </Head>
